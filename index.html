@@ -1,1 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kid Free Kickabout</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --green:#1a6b2f;--green-dk:#114720;--green-lt:#e8f5ec;
+      --accent:#f5c518;--red:#c0392b;--text:#1a1a1a;
+      --muted:#666;--border:#e0e0e0;--white:#fff;--r:14px;
+    }
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#eef2ee;color:var(--text);min-height:100vh;display:flex;flex-direction:column}
 
+    /* NAV */
+    nav{background:var(--green-dk);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:50}
+    .logo{display:flex;align-items:center;gap:.5rem;text-decoration:none}
+    .logo-text{color:#fff;font-size:1.15rem;font-weight:800}
+    .logo-text span{color:var(--accent)}
+    nav a.nav-link{color:rgba(255,255,255,.8);text-decoration:none;font-size:.88rem;font-weight:500;transition:color .2s}
+    nav a.nav-link:hover{color:var(--accent)}
+
+    /* HERO */
+    .hero{background:linear-gradient(150deg,var(--green),var(--green-dk));padding:2.5rem 1rem 3rem;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='28' fill='none' stroke='rgba(255,255,255,.05)' stroke-width='2'/%3E%3C/svg%3E") repeat}
+    .hero h1{color:#fff;font-size:clamp(1.6rem,4vw,2.3rem);font-weight:800;position:relative}
+    .hero h1 span{color:var(--accent)}
+    .hero p{color:rgba(255,255,255,.7);margin-top:.4rem;font-size:.9rem;position:relative}
+    .pill{display:inline-block;margin-top:1rem;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:50px;padding:.4rem 1.1rem;font-size:.84rem;font-weight:600;position:relative}
+    .pill.tonight{background:var(--accent);color:var(--green-dk);border-color:var(--accent)}
+
+    /* LAYOUT */
+    .content{flex:1;max-width:980px;margin:0 auto;width:100%;padding:1.75rem 1rem;display:flex;flex-direction:column;gap:1.5rem}
+
+    /* CARD */
+    .card{background:var(--white);border-radius:var(--r);box-shadow:0 2px 14px rgba(0,0,0,.07);padding:1.75rem}
+    .card-title{font-size:1rem;font-weight:700;margin-bottom:.25rem;display:flex;align-items:center;gap:.45rem}
+    .card-sub{font-size:.82rem;color:var(--muted);margin-bottom:1.1rem}
+
+    /* SUBS */
+    .subs-wrap{max-width:420px;margin:0 auto;width:100%}
+    .subs-wrap .card{text-align:center}
+    select{width:100%;padding:.7rem 1rem;border:2px solid var(--border);border-radius:8px;font-size:1rem;color:var(--text);background:var(--white);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;cursor:pointer;transition:border-color .2s}
+    select:focus{outline:none;border-color:var(--green)}
+
+    .btn{display:block;width:100%;margin-top:.7rem;padding:.72rem;font-size:.95rem;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:background .18s,transform .1s}
+    .btn:active{transform:scale(.98)}
+    .btn:disabled{background:#bbb;cursor:not-allowed;color:#fff}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.primary:hover:not(:disabled){background:var(--green-dk)}
+    .btn.soft{background:var(--green-lt);color:var(--green-dk)}
+    .btn.soft:hover{background:#cde8d3}
+    .btn.accent{background:var(--accent);color:var(--green-dk)}
+    .btn.accent:hover{background:#dba800}
+    .load-msg{margin-top:.65rem;font-size:.8rem;color:var(--muted)}
+
+    /* GRID ROW */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    @media(max-width:640px){.two-col{grid-template-columns:1fr}}
+
+    /* WEATHER */
+    .wx-center{text-align:center;padding:.25rem 0}
+    .wx-date{font-size:.78rem;color:var(--muted);margin-bottom:.6rem}
+    .wx-emoji{font-size:3.2rem;line-height:1}
+    .wx-desc{font-size:.95rem;font-weight:600;margin:.4rem 0 .2rem}
+    .wx-temp{font-size:2.4rem;font-weight:800;color:var(--green)}
+    .wx-meta{display:flex;justify-content:center;gap:1.2rem;margin-top:.6rem;font-size:.8rem;color:var(--muted)}
+    .wx-verdict{margin-top:.9rem;padding:.55rem .85rem;background:var(--green-lt);border-radius:8px;font-size:.8rem;font-weight:500;color:var(--green-dk);line-height:1.45}
+    .wx-spin{text-align:center;color:var(--muted);font-size:.88rem;padding:1rem 0}
+
+    /* TEAM PICKER */
+    .team-row{display:flex;gap:.5rem;margin-bottom:.65rem}
+    .team-row .btn{margin-top:0;padding:.45rem .6rem;font-size:.78rem;flex:1}
+    .player-count{font-size:.78rem;color:var(--muted);margin-bottom:.4rem}
+    .player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:.35rem;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:.55rem;margin-bottom:.7rem;background:#fafafa}
+    .pcheck{display:flex;align-items:center;gap:.35rem;font-size:.8rem;cursor:pointer;padding:.22rem .35rem;border-radius:6px;transition:background .12s;user-select:none}
+    .pcheck:hover{background:var(--green-lt)}
+    .pcheck input{accent-color:var(--green);cursor:pointer;flex-shrink:0}
+
+    /* TEAM RESULTS */
+    .team-result{margin-top:.9rem;display:none}
+    .team-result.show{display:block}
+    .teams{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+    .t-box{border-radius:10px;padding:.7rem;text-align:center}
+    .t-box.dark{background:var(--green-dk);color:#fff}
+    .t-box.light{background:#f0f0f0;color:var(--text)}
+    .t-box h4{font-size:.85rem;font-weight:700;margin-bottom:.45rem}
+    .t-box ul{list-style:none}
+    .t-box ul li{font-size:.78rem;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.12)}
+    .t-box.light ul li{border-color:#ddd}
+    .t-box ul li:last-child{border:none}
+    .reshuffle{margin-top:.6rem;padding:.5rem;font-size:.82rem}
+
+    /* MODALS */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);backdrop-filter:blur(3px);z-index:100;align-items:center;justify-content:center;padding:1rem}
+    .overlay.show{display:flex}
+    .modal{background:#fff;border-radius:18px;padding:2rem 1.75rem;width:100%;max-width:340px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.22);animation:pop .22s ease}
+    @keyframes pop{from{transform:scale(.84);opacity:0}to{transform:scale(1);opacity:1}}
+    .m-ball{font-size:2.8rem;margin-bottom:.4rem}
+    .m-name{font-size:1.4rem;font-weight:800;margin-bottom:1.1rem}
+    .badge{display:inline-block;padding:.45rem 1.1rem;border-radius:50px;font-weight:700;font-size:.95rem;margin-bottom:.9rem}
+    .b-credit{background:#d4edda;color:#155724}
+    .b-debt{background:#f8d7da;color:#721c24}
+    .b-clear{background:#fff3cd;color:#856404}
+    .m-amt{font-size:2.4rem;font-weight:800;margin:.2rem 0 .4rem}
+    .m-amt.credit{color:var(--green)}
+    .m-amt.debt{color:var(--red)}
+    .m-amt.clear{color:#856404}
+    .m-note{font-size:.83rem;color:var(--muted);margin-bottom:1.3rem;line-height:1.5}
+    .close-btn{background:var(--green-lt);color:var(--green-dk);border:none;padding:.6rem 1.8rem;border-radius:8px;font-size:.92rem;font-weight:600;cursor:pointer;transition:background .2s}
+    .close-btn:hover{background:#cde8d3}
+    #aboutModal .modal{max-width:390px;text-align:left}
+    #aboutModal h3{font-size:1.15rem;font-weight:700;margin-bottom:.7rem;text-align:center}
+    #aboutModal p{font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:.65rem}
+    #aboutModal .close-btn{display:block;margin:0 auto}
+
+    footer{text-align:center;padding:1.1rem;font-size:.78rem;color:var(--muted);border-top:1px solid var(--border);background:#fff;margin-top:auto}
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#"><span style="font-size:1.4rem">⚽</span>
+    <span class="logo-text">Kid Free <span>Kickabout</span></span></a>
+  <a class="nav-link" href="#" onclick="showAbout();return false">About</a>
+</nav>
+
+<div class="hero">
+  <h1>Tuesday Night <span>Subs</span> Checker</h1>
+  <p>Balance · Forecast · Teams — everything for match night</p>
+  <div class="pill" id="countdownPill">⏳ Loading…</div>
+</div>
+
+<div class="content">
+
+  <!-- SUBS CHECKER -->
+  <div class="subs-wrap">
+    <div class="card">
+      <div class="card-title" style="justify-content:center">⚽ Check Your Balance</div>
+      <p class="card-sub" style="text-align:center">Pick your name to see your subs status</p>
+      <select id="playerSelect"><option value="">— Loading players… —</option></select>
+      <button class="btn primary" id="checkBtn" onclick="checkStatus()" disabled>Check My Status</button>
+      <p class="load-msg" id="loadMsg">Fetching latest data from the sheet…</p>
+    </div>
+  </div>
+
+  <!-- WEATHER + TEAMS -->
+  <div class="two-col">
+
+    <!-- WEATHER -->
+    <div class="card">
+      <div class="card-title">🌤️ Tuesday Night Forecast</div>
+      <p class="card-sub">Cambridge · 7pm match time</p>
+      <div id="wxContent"><div class="wx-spin">Loading forecast…</div></div>
+    </div>
+
+    <!-- TEAM PICKER -->
+    <div class="card">
+      <div class="card-title">🎲 Random Team Picker</div>
+      <p class="card-sub">Tick who's playing tonight, then shuffle!</p>
+      <div class="team-row">
+        <button class="btn soft" onclick="selectAll()">Select All</button>
+        <button class="btn soft" onclick="clearAll()">Clear</button>
+      </div>
+      <div class="player-count" id="playerCount">Tick the players showing up tonight</div>
+      <div class="player-grid" id="playerGrid"><div style="color:var(--muted);font-size:.82rem">Loading players…</div></div>
+      <button class="btn accent" onclick="pickTeams()">🎲 Pick Teams!</button>
+      <div class="team-result" id="teamResult">
+        <div class="teams">
+          <div class="t-box dark"><h4>⚫ Dark Bibs</h4><ul id="teamA"></ul></div>
+          <div class="t-box light"><h4>⚪ Light Bibs</h4><ul id="teamB"></ul></div>
+        </div>
+        <button class="btn soft reshuffle" onclick="pickTeams()">🔀 Reshuffle</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>Kid Free Kickabout · Tuesday nights · Cambridge ⚽</footer>
+
+<!-- STATUS MODAL -->
+<div class="overlay" id="statusModal">
+  <div class="modal">
+    <div class="m-ball" id="mBall"></div>
+    <div class="m-name" id="mName"></div>
+    <div class="badge" id="mBadge"></div>
+    <div class="m-amt" id="mAmt"></div>
+    <p class="m-note" id="mNote"></p>
+    <button class="close-btn" onclick="closeModal('statusModal')">Close</button>
+  </div>
+</div>
+
+<!-- ABOUT MODAL -->
+<div class="overlay" id="aboutModal">
+  <div class="modal">
+    <h3>⚽ About Kid Free Kickabout</h3>
+    <p>We're a Tuesday night 5-a-side group based in Cambridge — keeping fit, having fun, and leaving the kids at home for an hour.</p>
+    <p>Check your subs balance live, see Tuesday's weather before you pack your bag, and let the random picker settle the eternal team debate.</p>
+    <p>Questions about payments? Catch the organiser on the night.</p>
+    <button class="close-btn" onclick="closeModal('aboutModal')">Got it</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────
+const CSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQojacGiBLfgRGcMBq6v4TRV3rNOJQ7tZwVNI8k1j27pijRIK_SIjqolOQbwnQDzV6-NQcs4nR85r-R/pub?gid=95510386&single=true&output=csv';
+const C_NAME=0, C_BAL=1, ROW_START=1; // Balance tab: col A=Name, col B=Balance, row 1 = header
+const LAT=52.2053, LON=0.1218, MATCH_HR=19;
+
+let players=[];
+
+// ── CSV ─────────────────────────────────────────────
+function parseCSV(txt){
+  const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(q){if(c==='"'&&txt[i+1]==='"'){cell+='"';i++}else if(c==='"')q=false;else cell+=c}
+    else if(c==='"')q=true;
+    else if(c===','){row.push(cell);cell=''}
+    else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}
+    else if(c!=='\r')cell+=c;
+  }
+  if(cell||row.length){row.push(cell);rows.push(row)}
+  return rows;
+}
+function £(s){const n=parseFloat((s||'').replace(/[£,\s]/g,''));return isNaN(n)?0:n}
+
+// ── LOAD DATA ───────────────────────────────────────
+async function loadData(){
+  try{
+    const txt=await fetch(CSV_URL).then(r=>r.text());
+    const rows=parseCSV(txt);
+    players=[];
+    for(let i=ROW_START;i<rows.length;i++){
+      const r=rows[i], name=(r[C_NAME]||'').trim();
+      if(name.length<2)continue;
+      players.push({name,bal:£(r[C_BAL])});
+    }
+    players.sort((a,b)=>a.name.localeCompare(b.name));
+
+    // Subs dropdown
+    const sel=document.getElementById('playerSelect');
+    sel.innerHTML='<option value="">— Select your name —</option>';
+    players.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;sel.appendChild(o)});
+    document.getElementById('checkBtn').disabled=false;
+    document.getElementById('loadMsg').textContent='✅ Live data loaded — pick your name above.';
+
+    // Team grid
+    const g=document.getElementById('playerGrid');g.innerHTML='';
+    players.forEach((p,i)=>{
+      const l=document.createElement('label');l.className='pcheck';
+      l.innerHTML=`<input type="checkbox" data-i="${i}" onchange="updateCount()"> ${p.name}`;
+      g.appendChild(l);
+    });
+    updateCount();
+  }catch(e){
+    document.getElementById('loadMsg').textContent='⚠️ Could not load sheet. Make sure it\'s published as CSV.';
+    document.getElementById('playerSelect').innerHTML='<option value="">— Unavailable —</option>';
+    document.getElementById('playerGrid').innerHTML='<div style="color:var(--muted);font-size:.82rem">Unavailable</div>';
+  }
+}
+
+// ── SUBS ────────────────────────────────────────────
+function checkStatus(){
+  const v=document.getElementById('playerSelect').value;if(v==='')return;
+  const p=players[+v];
+  document.getElementById('mName').textContent=p.name;
+  const ball=document.getElementById('mBall'),badge=document.getElementById('mBadge'),
+        amt=document.getElementById('mAmt'),note=document.getElementById('mNote');
+  if(p.bal>0){
+    ball.textContent='🟢';badge.textContent='In Credit';badge.className='badge b-credit';
+    amt.textContent=`+£${p.bal.toFixed(2)}`;amt.className='m-amt credit';
+    note.textContent="You're ahead on subs — nice one! Rolls over to future weeks.";
+  }else if(p.bal<0){
+    ball.textContent='🔴';badge.textContent='Owes Subs';badge.className='badge b-debt';
+    amt.textContent=`-£${Math.abs(p.bal).toFixed(2)}`;amt.className='m-amt debt';
+    note.textContent="You owe subs — please bring cash or pay via bank transfer on Tuesday.";
+  }else{
+    ball.textContent='🟡';badge.textContent='All Square';badge.className='badge b-clear';
+    amt.textContent='£0.00';amt.className='m-amt clear';
+    note.textContent="You're all square — see you Tuesday! ⚽";
+  }
+  document.getElementById('statusModal').classList.add('show');
+}
+document.getElementById('playerSelect').addEventListener('change',e=>{
+  document.getElementById('checkBtn').disabled=e.target.value==='';
+});
+
+// ── COUNTDOWN ───────────────────────────────────────
+function countdown(){
+  const now=new Date(),day=now.getDay();
+  const pill=document.getElementById('countdownPill');
+  if(day===2){pill.textContent="⚽ It's match night! See you out there!";pill.classList.add('tonight')}
+  else{
+    const d=(2-day+7)%7;
+    pill.textContent=`⏳ Next match in ${d===1?'1 day':`${d} days`}`;
+  }
+}
+
+// ── WEATHER ─────────────────────────────────────────
+const WX={
+  0:['☀️','Clear skies'],1:['🌤️','Mainly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
+  45:['🌫️','Foggy'],48:['🌫️','Icy fog'],
+  51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌧️','Heavy drizzle'],
+  61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],
+  71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['❄️','Heavy snow'],
+  80:['🌦️','Showers'],81:['🌧️','Heavy showers'],82:['⛈️','Violent showers'],
+  95:['⛈️','Thunderstorm'],99:['⛈️','Thunderstorm & hail']
+};
+function verdict(code,rain){
+  if(code<=1)return"🟢 Perfect conditions — get your boots on!";
+  if(code<=3)return"🟡 A bit cloudy but totally fine for football.";
+  if(code<=48)return"🟠 Foggy out there — watch for that low cross!";
+  if(code<=55)return"🟡 Light drizzle — the pitch will be lively.";
+  if(code<=65)return rain>60?"🔴 It's going to be wet — waterproofs welcome.":"🟠 Rain likely — pack a layer.";
+  if(code<=77)return"🔴 Snow possible — check with the organiser!";
+  return"🔴 Rough out there — but we're not made of sugar.";
+}
+
+async function loadWeather(){
+  const el=document.getElementById('wxContent');
+  try{
+    const now=new Date(),day=now.getDay(),diff=day===2?0:(2-day+7)%7;
+    const tue=new Date(now);tue.setDate(now.getDate()+diff);
+    const dateStr=tue.toISOString().split('T')[0];
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,precipitation_probability,weather_code&timezone=Europe%2FLondon&forecast_days=9`;
+    const d=await fetch(url).then(r=>r.json());
+    const target=`${dateStr}T${String(MATCH_HR).padStart(2,'0')}:00`;
+    const idx=d.hourly.time.indexOf(target);
+    if(idx<0)throw 0;
+    const code=d.hourly.weather_code[idx];
+    const temp=Math.round(d.hourly.temperature_2m[idx]);
+    const rain=d.hourly.precipitation_probability[idx];
+    const[emoji,desc]=WX[code]||['🌡️','Unknown'];
+    const label=diff===0?'Tonight':tue.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
+    el.innerHTML=`<div class="wx-center">
+      <div class="wx-date">${label} · ${MATCH_HR}:00</div>
+      <div class="wx-emoji">${emoji}</div>
+      <div class="wx-desc">${desc}</div>
+      <div class="wx-temp">${temp}°C</div>
+      <div class="wx-meta"><span>🌧️ ${rain}% rain chance</span></div>
+      <div class="wx-verdict">${verdict(code,rain)}</div>
+    </div>`;
+  }catch{el.innerHTML='<div class="wx-spin">⚠️ Forecast unavailable right now.</div>'}
+}
+
+// ── TEAM PICKER ─────────────────────────────────────
+function updateCount(){
+  const n=document.querySelectorAll('#playerGrid input:checked').length;
+  document.getElementById('playerCount').textContent=
+    n?`${n} player${n!==1?'s':''} selected — ready to pick!`:'Tick the players showing up tonight';
+}
+function selectAll(){document.querySelectorAll('#playerGrid input').forEach(c=>c.checked=true);updateCount()}
+function clearAll(){
+  document.querySelectorAll('#playerGrid input').forEach(c=>c.checked=false);
+  updateCount();document.getElementById('teamResult').classList.remove('show');
+}
+function pickTeams(){
+  const checked=[...document.querySelectorAll('#playerGrid input:checked')];
+  if(checked.length<2){alert('Select at least 2 players first!');return}
+  const names=checked.map(c=>players[+c.dataset.i].name);
+  for(let i=names.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[names[i],names[j]]=[names[j],names[i]]}
+  const mid=Math.ceil(names.length/2);
+  document.getElementById('teamA').innerHTML=names.slice(0,mid).map(n=>`<li>${n}</li>`).join('');
+  document.getElementById('teamB').innerHTML=names.slice(mid).map(n=>`<li>${n}</li>`).join('');
+  const res=document.getElementById('teamResult');res.classList.add('show');
+  res.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── MODALS ──────────────────────────────────────────
+function showAbout(){document.getElementById('aboutModal').classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('show')}));
+
+// ── BOOT ────────────────────────────────────────────
+countdown();loadWeather();loadData();
+</script>
+</body>
+</html>
