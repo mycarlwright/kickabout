@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kid Free Kickabout</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -229,48 +230,51 @@ function £(s){const n=parseFloat((s||'').replace(/[£,\s]/g,''));return isNaN(n
 
 // ── LOAD DATA ───────────────────────────────────────
 async function loadData(){
-  try{
-    let txt;
-    try {
-      // Try direct first (works if sheet CORS headers allow it)
-      const r = await fetch(CSV_URL);
-      if (!r.ok) throw new Error();
-      txt = await r.text();
-    } catch {
-      // Fallback to proxy
-      const r = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(CSV_URL));
-      if (!r.ok) throw new Error();
-      txt = await r.text();
-    }
-    const rows=parseCSV(txt);
-    players=[];
-    for(let i=ROW_START;i<rows.length;i++){
-      const r=rows[i], name=(r[C_NAME]||'').trim();
-      if(name.length<2)continue;
-      players.push({name,bal:£(r[C_BAL])});
-    }
-    players.sort((a,b)=>a.name.localeCompare(b.name));
+  Papa.parse(CSV_URL, {
+    download: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      try {
+        const rows = results.data;
+        players = [];
+        for (let i = 1; i < rows.length; i++) { // skip header row
+          const name = (rows[i][0] || '').trim();
+          if (name.length < 2) continue;
+          const bal = parseFloat((rows[i][1] || '0').replace(/[£,\s]/g, '')) || 0;
+          players.push({ name, bal });
+        }
+        players.sort((a,b) => a.name.localeCompare(b.name));
 
-    // Subs dropdown
-    const sel=document.getElementById('playerSelect');
-    sel.innerHTML='<option value="">— Select your name —</option>';
-    players.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;sel.appendChild(o)});
-    document.getElementById('checkBtn').disabled=false;
-    document.getElementById('loadMsg').textContent='✅ Live data loaded — pick your name above.';
+        // Subs dropdown
+        const sel = document.getElementById('playerSelect');
+        sel.innerHTML = '<option value="">— Select your name —</option>';
+        players.forEach((p,i) => {
+          const o = document.createElement('option');
+          o.value = i; o.textContent = p.name; sel.appendChild(o);
+        });
+        document.getElementById('checkBtn').disabled = false;
+        document.getElementById('loadMsg').textContent = '✅ Live data loaded — pick your name above.';
 
-    // Team grid
-    const g=document.getElementById('playerGrid');g.innerHTML='';
-    players.forEach((p,i)=>{
-      const l=document.createElement('label');l.className='pcheck';
-      l.innerHTML=`<input type="checkbox" data-i="${i}" onchange="updateCount()"> ${p.name}`;
-      g.appendChild(l);
-    });
-    updateCount();
-  }catch(e){
-    document.getElementById('loadMsg').textContent='⚠️ Could not load sheet. Make sure it\'s published as CSV.';
-    document.getElementById('playerSelect').innerHTML='<option value="">— Unavailable —</option>';
-    document.getElementById('playerGrid').innerHTML='<div style="color:var(--muted);font-size:.82rem">Unavailable</div>';
-  }
+        // Team grid
+        const g = document.getElementById('playerGrid'); g.innerHTML = '';
+        players.forEach((p,i) => {
+          const l = document.createElement('label'); l.className = 'pcheck';
+          l.innerHTML = `<input type="checkbox" data-i="${i}" onchange="updateCount()"> ${p.name}`;
+          g.appendChild(l);
+        });
+        updateCount();
+      } catch(e) {
+        showDataError();
+      }
+    },
+    error: function() { showDataError(); }
+  });
+}
+
+function showDataError() {
+  document.getElementById('loadMsg').textContent = '⚠️ Could not load sheet. Make sure it\'s published as CSV.';
+  document.getElementById('playerSelect').innerHTML = '<option value="">— Unavailable —</option>';
+  document.getElementById('playerGrid').innerHTML = '<div style="color:var(--muted);font-size:.82rem">Unavailable</div>';
 }
 
 // ── SUBS ────────────────────────────────────────────
