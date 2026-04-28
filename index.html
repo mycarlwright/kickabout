@@ -230,8 +230,18 @@ function £(s){const n=parseFloat((s||'').replace(/[£,\s]/g,''));return isNaN(n
 // ── LOAD DATA ───────────────────────────────────────
 async function loadData(){
   try{
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL);
-    const txt=await fetch(proxyUrl).then(r=>r.text());
+    let txt;
+    try {
+      // Try direct first (works if sheet CORS headers allow it)
+      const r = await fetch(CSV_URL);
+      if (!r.ok) throw new Error();
+      txt = await r.text();
+    } catch {
+      // Fallback to proxy
+      const r = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(CSV_URL));
+      if (!r.ok) throw new Error();
+      txt = await r.text();
+    }
     const rows=parseCSV(txt);
     players=[];
     for(let i=ROW_START;i<rows.length;i++){
