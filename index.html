@@ -4,7 +4,6 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kid Free Kickabout</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -228,53 +227,63 @@ function parseCSV(txt){
 }
 function £(s){const n=parseFloat((s||'').replace(/[£,\s]/g,''));return isNaN(n)?0:n}
 
-// ── LOAD DATA ───────────────────────────────────────
-async function loadData(){
-  Papa.parse(CSV_URL, {
-    download: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-      try {
-        const rows = results.data;
-        players = [];
-        for (let i = 1; i < rows.length; i++) { // skip header row
-          const name = (rows[i][0] || '').trim();
-          if (name.length < 2) continue;
-          const bal = parseFloat((rows[i][1] || '0').replace(/[£,\s]/g, '')) || 0;
-          players.push({ name, bal });
-        }
-        players.sort((a,b) => a.name.localeCompare(b.name));
-
-        // Subs dropdown
-        const sel = document.getElementById('playerSelect');
-        sel.innerHTML = '<option value="">— Select your name —</option>';
-        players.forEach((p,i) => {
-          const o = document.createElement('option');
-          o.value = i; o.textContent = p.name; sel.appendChild(o);
-        });
-        document.getElementById('checkBtn').disabled = false;
-        document.getElementById('loadMsg').textContent = '✅ Live data loaded — pick your name above.';
-
-        // Team grid
-        const g = document.getElementById('playerGrid'); g.innerHTML = '';
-        players.forEach((p,i) => {
-          const l = document.createElement('label'); l.className = 'pcheck';
-          l.innerHTML = `<input type="checkbox" data-i="${i}" onchange="updateCount()"> ${p.name}`;
-          g.appendChild(l);
-        });
-        updateCount();
-      } catch(e) {
-        showDataError();
-      }
-    },
-    error: function() { showDataError(); }
-  });
+// ── FETCH WITH TIMEOUT + PROXY FALLBACK ─────────────
+async function fetchCSV() {
+  const proxies = [
+    CSV_URL,
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(CSV_URL),
+    'https://corsproxy.io/?' + encodeURIComponent(CSV_URL),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(CSV_URL)
+  ];
+  for (const url of proxies) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 6000);
+      const r = await fetch(url, {signal: ctrl.signal});
+      clearTimeout(t);
+      const txt = await r.text();
+      if (txt && txt.includes(',')) return txt; // valid CSV check
+    } catch(e) { continue; }
+  }
+  throw new Error('All sources failed');
 }
 
-function showDataError() {
-  document.getElementById('loadMsg').textContent = '⚠️ Could not load sheet. Make sure it\'s published as CSV.';
-  document.getElementById('playerSelect').innerHTML = '<option value="">— Unavailable —</option>';
-  document.getElementById('playerGrid').innerHTML = '<div style="color:var(--muted);font-size:.82rem">Unavailable</div>';
+// ── LOAD DATA ───────────────────────────────────────
+async function loadData(){
+  try{
+    const txt = await fetchCSV();
+    const rows = parseCSV(txt);
+    players = [];
+    for(let i=1;i<rows.length;i++){  // i=1 skips header row
+      const name=(rows[i][0]||'').trim();
+      if(name.length<2)continue;
+      const bal=parseFloat((rows[i][1]||'0').replace(/[£,\s]/g,''))||0;
+      players.push({name,bal});
+    }
+    players.sort((a,b)=>a.name.localeCompare(b.name));
+
+    const sel=document.getElementById('playerSelect');
+    sel.innerHTML='<option value="">— Select your name —</option>';
+    players.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;sel.appendChild(o)});
+    document.getElementById('checkBtn').disabled=false;
+    document.getElementById('loadMsg').textContent='✅ Live data loaded — pick your name above.';
+
+    const g=document.getElementById('playerGrid');g.innerHTML='';
+    players.forEach((p,i)=>{
+      const l=document.createElement('label');l.className='pcheck';
+      l.innerHTML=`<input type="checkbox" data-i="${i}" onchange="updateCount()"> ${p.name}`;
+      g.appendChild(l);
+    });
+    updateCount();
+  }catch(e){
+    document.getElementById('loadMsg').textContent='⚠️ Could not load data: ' + e.message;
+    showDataError();
+  }
+}
+
+function showDataError(){
+  document.getElementById('playerSelect').innerHTML='<option value="">— Unavailable —</option>';
+  document.getElementById('playerGrid').innerHTML='<div style="color:var(--muted);font-size:.82rem">Unavailable</div>';
 }
 
 // ── SUBS ────────────────────────────────────────────
