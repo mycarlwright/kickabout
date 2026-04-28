@@ -230,7 +230,8 @@ function £(s){const n=parseFloat((s||'').replace(/[£,\s]/g,''));return isNaN(n
 // ── LOAD DATA ───────────────────────────────────────
 async function loadData(){
   try{
-    const txt=await fetch(CSV_URL).then(r=>r.text());
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL);
+    const txt=await fetch(proxyUrl).then(r=>r.text());
     const rows=parseCSV(txt);
     players=[];
     for(let i=ROW_START;i<rows.length;i++){
