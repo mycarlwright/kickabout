@@ -160,6 +160,8 @@
     <div class="badge" id="mBadge"></div>
     <div class="m-amt" id="mAmt"></div>
     <p class="m-note" id="mNote"></p>
+    <a id="monzoBtn" href="https://monzo.me/benwajdner" target="_blank" style="display:none;margin-bottom:1rem;background:#ff4e64;color:#fff;border:none;padding:.65rem 1.5rem;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;text-decoration:none">&#128178; Pay via Monzo</a>
+    <br id="monzoBr" />
     <button class="close-btn" onclick="closeModal('statusModal')">Close</button>
   </div>
 </div>
@@ -167,8 +169,9 @@
 <div class="overlay" id="aboutModal">
   <div class="modal">
     <h3>&#9917; About Kid Free Kickabout</h3>
-    <p>We are a Tuesday night 5-a-side group based in Cambridge - keeping fit, having fun, and leaving the kids at home.</p>
+    <p>We are a Tuesday night local dads football group, currently playing at Melbourn Sports Centre, keeping fit, having fun, and leaving the kids at home.</p>
     <p>Check your subs balance live, see Tuesday weather before you pack your bag, and let the random picker settle the team debate.</p>
+    <p><strong>1st connection friends - local dads ONLY</strong><br>Plastic blades/moulded boots. No metal studs. 8pm start.</p>
     <p>Questions about payments? Catch the organiser on the night.</p>
     <button class="close-btn" onclick="closeModal('aboutModal')">Got it</button>
   </div>
@@ -296,6 +299,7 @@ function checkStatus() {
     badge.className = 'badge b-credit';
     amt.textContent = '+' + p.bal.toFixed(2);
     amt.className = 'm-amt credit';
+    document.getElementById('monzoBtn').style.display = 'none';
     note.textContent = 'You are ahead on subs - nice one! Rolls over to future weeks.';
   } else if (p.bal < 0) {
     ball.innerHTML = '&#128308;';
@@ -303,13 +307,15 @@ function checkStatus() {
     badge.className = 'badge b-debt';
     amt.textContent = '-' + Math.abs(p.bal).toFixed(2);
     amt.className = 'm-amt debt';
-    note.textContent = 'You owe subs - please bring cash or pay via bank transfer on Tuesday.';
+    note.textContent = 'You owe subs - please settle using the pay link, thanks.';
+    document.getElementById('monzoBtn').style.display = 'inline-block';
   } else {
     ball.innerHTML = '&#128993;';
     badge.textContent = 'All Square';
     badge.className = 'badge b-clear';
     amt.textContent = '0.00';
     amt.className = 'm-amt clear';
+    document.getElementById('monzoBtn').style.display = 'none';
     note.textContent = 'You are all square - see you Tuesday!';
   }
   document.getElementById('statusModal').classList.add('show');
